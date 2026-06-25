@@ -1,0 +1,54 @@
+---
+- name: Install Java (required by Jenkins)
+  apt:
+    name: openjdk-17-jre
+    state: present
+    update_cache: yes
+
+- name: Add Jenkins GPG key
+  apt_key:
+    url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+    state: present
+
+- name: Add Jenkins repository
+  apt_repository:
+    repo: "deb https://pkg.jenkins.io/debian-stable binary/"
+    state: present
+
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+    update_cache: yes
+
+- name: Ensure Jenkins service is running and enabled
+  systemd:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- name: Add jenkins user to docker group (so Jenkins pipelines can run docker commands)
+  user:
+    name: jenkins
+    groups: docker
+    append: yes
+
+- name: Restart Jenkins to apply group membership
+  systemd:
+    name: jenkins
+    state: restarted
+
+- name: Wait for Jenkins to be reachable on port 8080
+  wait_for:
+    port: 8080
+    delay: 10
+    timeout: 120
+
+- name: Get initial Jenkins admin password
+  command: cat /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_initial_password
+  changed_when: false
+
+- name: Show the initial Jenkins admin password
+  debug:
+    msg: "Jenkins initial admin password: {{ jenkins_initial_password.stdout }}"
