@@ -1,7 +1,7 @@
 # BookMyShow — End-to-End DevOps Pipeline Project
 
 A learning project that takes a React web app (BookMyShow clone) and builds a complete
-automated deployment pipeline around it using Git, Docker, Jenkins, Terraform, and Ansible.
+automated deployment pipeline around it using Git, Docker, Jenkins, Terraform, and Ansible..
 
 ## Architecture / Flow
 
