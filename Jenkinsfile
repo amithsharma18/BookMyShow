@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NODE_ENV = "production"
+        NODE_ENV = 'production'
     }
 
     stages {
@@ -16,15 +16,20 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git branch: 'master',
-                url: 'https://github.com/amithsharma18/BookMyShow.git'
+                    url: 'https://github.com/amithsharma18/BookMyShow.git'
             }
         }
 
         stage('Check Versions') {
             steps {
                 sh '''
+                    echo "Java Version:"
                     java -version
+
+                    echo "Node Version:"
                     node -v
+
+                    echo "NPM Version:"
                     npm -v
                 '''
             }
@@ -32,31 +37,38 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                dir('bookmyshow-app') {
+                    sh 'npm install'
+                }
             }
         }
 
         stage('Build Application') {
             steps {
-                sh 'npm run build'
+                dir('bookmyshow-app') {
+                    sh 'npm run build'
+                }
             }
         }
 
-        stage('Archive Artifact') {
+        stage('Archive Build') {
             steps {
-                archiveArtifacts artifacts: '**/dist/**', fingerprint: true
+                archiveArtifacts artifacts: 'bookmyshow-app/build/**', fingerprint: true
             }
         }
-
     }
 
     post {
         success {
-            echo 'Build Successful!'
+            echo '✅ React application built successfully.'
         }
 
         failure {
-            echo 'Build Failed!'
+            echo '❌ Build failed.'
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
