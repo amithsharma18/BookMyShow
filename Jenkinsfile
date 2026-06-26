@@ -46,6 +46,7 @@ pipeline {
         stage('Build Application') {
     environment {
         NODE_OPTIONS = '--openssl-legacy-provider'
+        CI = 'false'
     }
     steps {
         dir('bookmyshow-app') {
