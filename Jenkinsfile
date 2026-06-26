@@ -44,13 +44,15 @@ pipeline {
         }
 
         stage('Build Application') {
-            steps {
-                dir('bookmyshow-app') {
-                    sh 'npm run build'
-                }
-            }
+    environment {
+        NODE_OPTIONS = '--openssl-legacy-provider'
+    }
+    steps {
+        dir('bookmyshow-app') {
+            sh 'npm run build'
         }
-
+    }
+}
         stage('Archive Build') {
             steps {
                 archiveArtifacts artifacts: 'bookmyshow-app/build/**', fingerprint: true
