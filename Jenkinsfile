@@ -1,8 +1,10 @@
+```groovy
 pipeline {
     agent any
 
     environment {
         NODE_ENV = 'production'
+        IMAGE_NAME = 'amithsharma18/bookmyshow:v1'
     }
 
     stages {
@@ -31,6 +33,9 @@ pipeline {
 
                     echo "NPM Version:"
                     npm -v
+
+                    echo "Docker Version:"
+                    docker --version
                 '''
             }
         }
@@ -64,20 +69,31 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('bookmyshow-app') {
-                    sh 'docker build -t bookmyshow:latest .'
+                    sh '''
+                        docker build -t ${IMAGE_NAME} .
+                    '''
                 }
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Docker Hub Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
             steps {
                 sh '''
-                    docker rm -f bookmyshow-container || true
-
-                    docker run -d \
-                        --name bookmyshow-container \
-                        -p 3000:80 \
-                        bookmyshow:latest
+                    docker push ${IMAGE_NAME}
                 '''
             }
         }
@@ -85,11 +101,17 @@ pipeline {
 
     post {
         success {
-            echo '✅ React application built and container started successfully.'
+            echo '✅ React application built successfully.'
+            echo '✅ Docker image pushed to Docker Hub successfully.'
         }
 
         failure {
-            echo '❌ Build failed.'
+            echo '❌ Pipeline failed.'
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
+```
