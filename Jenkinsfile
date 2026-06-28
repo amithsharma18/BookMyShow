@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         NODE_ENV = 'production'
-        IMAGE_NAME = 'amithsharma18/bookmyshow:v1'
+        IMAGE_NAME = 'amith1808/bookmyshow:v1'
     }
 
     stages {
