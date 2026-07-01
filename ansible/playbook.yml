@@ -7,13 +7,4 @@
   roles:
     - docker
     - jenkins
-
-- name: Deploy the BookMyShow app container
-  hosts: devops_box
-  become: yes
-  gather_facts: no
-  vars:
-    docker_image: "YOUR_DOCKERHUB_USERNAME/bms:latest"
-
-  roles:
-    - app
+    - npm

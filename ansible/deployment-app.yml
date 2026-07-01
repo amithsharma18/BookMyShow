@@ -1,0 +1,41 @@
+---
+- name: Deploy BookMyShow to Kubernetes
+  hosts: k8s_master
+  become: yes
+
+  tasks:
+
+    - name: Create Kubernetes manifests directory
+      file:
+        path: /root/k8s
+        state: directory
+
+    - name: Copy Deployment manifest
+      copy:
+        src: deploy-folder/deployment.yml
+        dest: /root/k8s/deployment.yaml
+
+    - name: Copy Service manifest
+      copy:
+        src: deploy-folder/service.yml
+        dest: /root/k8s/service.yaml
+
+    - name: Deploy BookMyShow Deployment
+      command: kubectl apply -f /root/k8s/deployment.yaml
+
+    - name: Deploy BookMyShow Service
+      command: kubectl apply -f /root/k8s/service.yaml
+
+    - name: Verify Pods
+      command: kubectl get pods -o wide
+      register: pods
+
+    - debug:
+        var: pods.stdout_lines
+
+    - name: Verify Service
+      command: kubectl get svc
+      register: service
+
+    - debug:
+        var: service.stdout_lines

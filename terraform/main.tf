@@ -1,7 +1,43 @@
-# Find the latest Ubuntu 22.04 AMI automatically (so this works in any region)
-data "aws_ami" "ubuntu" {
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+
+  filter {
+    name   = "default-for-az"
+    values = ["true"]
+  }
+}
+
+resource "aws_security_group" "allow_all" {
+  name   = "allow-all-sg"
+  vpc_id = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "allow-all-sg" }
+}
+
+data "aws_ami" "ubuntu_jammy" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical's official AWS account
+  owners      = ["099720109477"] # Canonical
 
   filter {
     name   = "name"
@@ -14,61 +50,19 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Security group - controls what traffic can reach the instance
-resource "aws_security_group" "devops_sg" {
-  name        = "${var.app_name}-sg"
-  description = "Allow SSH, HTTP, and app/tool ports for the DevOps pipeline box"
+resource "aws_instance" "servers" {
+  for_each = toset(var.instance_names)
 
-  ingress {
-    description = "SSH - restricted to your IP only"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.my_ip]
-  }
-
-  ingress {
-    description = "Jenkins UI"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "React app"
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${var.app_name}-sg"
-  }
-}
-
-# The EC2 instance itself - this will run Jenkins, Docker, and the app
-resource "aws_instance" "devops_box" {
-  ami                    = data.aws_ami.ubuntu.id
+  ami                    = data.aws_ami.ubuntu_jammy.id
   instance_type          = var.instance_type
+  subnet_id              = data.aws_subnets.default.ids[0]
+  vpc_security_group_ids = [aws_security_group.allow_all.id]
   key_name               = var.key_name
-  vpc_security_group_ids = [aws_security_group.devops_sg.id]
 
   root_block_device {
-    volume_size = 20 # GB - Jenkins + Docker images need more than the default 8GB
+    volume_size = var.root_volume_size
     volume_type = "gp3"
   }
 
-  tags = {
-    Name = var.app_name
-  }
+  tags = { Name = each.key }
 }
