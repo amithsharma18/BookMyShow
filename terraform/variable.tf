@@ -25,5 +25,5 @@ variable "key_name" {
 variable "instance_names" {
   description = "Names/tags for the EC2 instances to create"
   type        = list(string)
-  default     = ["website", "k8smaster", "k8sworker"]
+  default     = ["BMS-server", "k8smaster", "k8sworker"]
 }

@@ -1,10 +1,11 @@
 ---
-- name: Configure DevOps box - install Docker and Jenkins
-  hosts: devops_box
+
+- name: Configuring BMS-Server - install Docker, Jenkins, nodejs-18, npm
+  hosts: BMS-Server
   become: yes
   gather_facts: yes
 
   roles:
     - docker
     - jenkins
-    - npm
+    - node-npm 
